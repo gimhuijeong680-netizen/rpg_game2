@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#7a4a6e">
+  <title>PINKLE — A Little Witch's Cozy Life</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/galmuri@2.40.3/dist/galmuri.css" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- 게임 화면 = 브라우저 전체. 캔버스 크기는 js/main.js 가 창 크기에 맞춰 정수배로 조정 -->
+  <div class="stage" id="stage">
+    <canvas id="game" tabindex="0" aria-label="PINKLE 게임 화면"></canvas>
+
+    <div class="hud" id="hud">
+      <!-- 좌측 상단: 날짜 + 진행 중인 퀘스트 (작게) -->
+      <div class="hud-tl">
+        <div class="pill hud-date"><b>PINKLE</b><span id="hudDate">1일 · 오전 09:00</span></div>
+        <div class="quest" id="quest">
+          <button class="pill quest-line" id="questToggle" type="button" aria-expanded="false"></button>
+          <div class="pxbox quest-detail" id="questDetail" hidden></div>
+        </div>
+      </div>
+
+      <!-- 우측 상단: 아이콘 버튼 -->
+      <div class="hud-tr">
+        <button class="pill icon-btn" id="decoBtn" type="button" hidden title="집 꾸미기 (F)">
+          <span class="icon-slot" data-icon="iconHouse"></span><span>꾸미기</span>
+        </button>
+        <button class="pill icon-btn bag-btn" id="bagBtn" type="button" title="가방 (I)" aria-label="가방">
+          <span class="icon-slot" data-icon="iconBag"></span><span class="bag-count" id="bagCount">0</span>
+        </button>
+        <button class="pill icon-btn" id="helpBtn" type="button" title="조작법" aria-label="조작법">?</button>
+        <button class="pill icon-btn" id="fullBtn" type="button" title="전체 화면" aria-label="전체 화면">⛶</button>
+      </div>
+
+      <!-- 조작법 (? 버튼을 눌렀을 때만) -->
+      <section class="help pxbox" id="help" hidden>
+        <h2>조작법</h2>
+        <ul>
+          <li><kbd>WASD</kbd> <kbd>↑↓←→</kbd> 이동</li>
+          <li><kbd>E</kbd> <kbd>Space</kbd> 대화 · 줍기 · 확인</li>
+          <li><kbd>P</kbd> 동물 주민 쓰다듬기</li>
+          <li><kbd>I</kbd> 가방 &nbsp; <kbd>F</kbd> 집 꾸미기</li>
+          <li><kbd>Esc</kbd> 닫기 &nbsp; <kbd>`</kbd> 충돌 영역</li>
+        </ul>
+        <p class="help-note">진행 상황은 자동으로 저장돼요.</p>
+        <div class="help-actions">
+          <button class="pill" id="resetBtn" type="button">처음부터 다시하기</button>
+          <button class="pill pink" id="helpClose" type="button">닫기</button>
+        </div>
+      </section>
+
+      <div class="pill prompt" id="prompt" hidden></div>
+      <div class="pet-bubbles" id="petBubbles"></div>
+      <div class="toasts" id="toasts"></div>
+
+      <!-- 대화창 -->
+      <section class="dialog pxbox" id="dialog" hidden>
+        <div class="dialog-portrait" id="dialogPortrait"></div>
+        <div class="dialog-body">
+          <div class="dialog-name" id="dialogName"></div>
+          <p class="dialog-text" id="dialogText"></p>
+          <div class="dialog-choices" id="dialogChoices"></div>
+          <span class="dialog-next" id="dialogNext">▼</span>
+        </div>
+      </section>
+
+      <!-- 인벤토리 -->
+      <section class="inventory pxbox" id="inventory" hidden>
+        <header class="panel-head">
+          <span class="icon-slot" data-icon="iconBag"></span>
+          <h2>마녀의 가방</h2>
+          <span class="count" id="invCount"></span>
+          <button class="pill close-btn" id="invClose" type="button" aria-label="닫기">×</button>
+        </header>
+        <div class="inv-grid" id="invGrid"></div>
+        <div class="inv-detail" id="invDetail"></div>
+      </section>
+
+      <!-- 집 꾸미기 -->
+      <section class="deco pxbox" id="deco" hidden>
+        <div class="deco-catalog" id="decoCatalog"></div>
+        <div class="deco-actions">
+          <p class="deco-hint" id="decoHint"></p>
+          <button class="pill" id="decoMove" type="button">이동</button>
+          <button class="pill" id="decoDelete" type="button">삭제</button>
+          <button class="pill pink" id="decoDone" type="button">완료</button>
+        </div>
+      </section>
+
+      <!-- 포션 제작 -->
+      <section class="brew pxbox" id="brew" hidden>
+        <header class="panel-head">
+          <span class="icon-slot" data-icon="iconSweetPotion"></span>
+          <h2>달콤한 마법 포션 만들기</h2>
+        </header>
+        <ol class="brew-steps" id="brewSteps"></ol>
+        <div class="brew-actions" id="brewActions"></div>
+        <p class="brew-hint" id="brewHint"></p>
+      </section>
+
+      <!-- 포션 완성 -->
+      <section class="result pxbox" id="brewResult" hidden>
+        <div class="result-stars"><i></i><i></i><i></i></div>
+        <h2>포션 완성!</h2>
+        <div class="result-icon" id="resultIcon"></div>
+        <p class="result-name">분홍색 달콤한 마법 포션 × 1</p>
+        <p class="result-sub">모모와 함께 만든 첫 번째 특별한 포션</p>
+        <button class="pill pink" id="resultOk" type="button">확인</button>
+      </section>
+
+      <!-- 퀘스트 완료 -->
+      <section class="result pxbox" id="banner" hidden>
+        <div class="result-stars"><i></i><i></i><i></i></div>
+        <h2 id="bannerTitle">퀘스트 완료!</h2>
+        <p id="bannerQuest"></p>
+        <div class="banner-rewards" id="bannerRewards"></div>
+        <button class="pill pink" id="bannerOk" type="button">확인</button>
+      </section>
+
+      <!-- 터치 조작 (터치 화면에서만) -->
+      <div class="touch" id="touch">
+        <div class="dpad">
+          <button type="button" data-dir="up" aria-label="위">▲</button>
+          <button type="button" data-dir="left" aria-label="왼쪽">◀</button>
+          <button type="button" data-dir="right" aria-label="오른쪽">▶</button>
+          <button type="button" data-dir="down" aria-label="아래">▼</button>
+        </div>
+        <div class="act-group">
+          <button type="button" class="act-btn pet-btn" id="touchPet" aria-label="쓰다듬기">♥</button>
+          <button type="button" class="act-btn" id="touchAct" aria-label="상호작용">E</button>
+        </div>
+      </div>
+
+      <div class="loading" id="loading">불러오는 중…</div>
+    </div>
+  </div>
+
+  <!-- 로드 순서 중요: core → data → systems → render → ui → main -->
+  <script src="js/core/config.js"></script>
+  <script src="js/core/palette.js"></script>
+  <script src="js/core/state.js"></script>
+  <script src="js/core/input.js"></script>
+  <script src="js/core/collision.js"></script>
+  <script src="js/core/assets.js"></script>
+  <script src="js/core/game.js"></script>
+  <script src="js/core/save.js"></script>
+
+  <script src="js/data/atlas.js"></script>
+  <script src="js/data/items.js"></script>
+  <script src="js/data/furniture.js"></script>
+  <script src="js/data/quests.js"></script>
+  <script src="js/data/dialogues.js"></script>
+  <script src="js/data/villageMap.js"></script>
+  <script src="js/data/houseMap.js"></script>
+  <script src="js/data/shopMap.js"></script>
+
+  <script src="js/systems/actions.js"></script>
+  <script src="js/systems/debug.js"></script>
+  <script src="js/systems/clock.js"></script>
+  <script src="js/systems/dialogue.js"></script>
+  <script src="js/systems/brew.js"></script>
+  <script src="js/systems/inventory.js"></script>
+  <script src="js/systems/decorate.js"></script>
+  <script src="js/systems/movement.js"></script>
+  <script src="js/systems/interaction.js"></script>
+  <script src="js/systems/pet.js"></script>
+  <script src="js/systems/scene.js"></script>
+
+  <script src="js/render/sprites.js"></script>
+  <script src="js/render/drawWorld.js"></script>
+  <script src="js/render/drawCharacters.js"></script>
+  <script src="js/render/drawShop.js"></script>
+  <script src="js/render/drawUI.js"></script>
+  <script src="js/render/renderer.js"></script>
+
+  <script src="js/ui/hud.js"></script>
+  <script src="js/ui/panels.js"></script>
+  <script src="js/ui/touch.js"></script>
+  <script src="js/dev/demo.js"></script>
+
+  <script src="js/main.js"></script>
+</body>
+</html>
